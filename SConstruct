@@ -1234,4 +1234,4 @@ def do_count(target, source, env):
         lines = lines + sum(1 for line in open(f))
     print "Total unit test lines: %d" % lines
 
-PhonyTargets(env, count = do_count)
+PhonyTargets(None, count = do_count)
