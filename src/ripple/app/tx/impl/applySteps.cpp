@@ -164,7 +164,7 @@ invoke_calculateConsequences(STTx const& tx)
     auto const category = T::affectsSubsequentTransactionAuth(tx) ?
         TxConsequences::blocker : TxConsequences::normal;
     auto const feePaid = T::calculateFeePaid(tx);
-    auto const maxSpend = T::calculateMaxSpend(tx);
+    auto const maxSpend = beast::zero; // T::calculateMaxSpend(tx);
 
     return{ category, feePaid, maxSpend };
 }
