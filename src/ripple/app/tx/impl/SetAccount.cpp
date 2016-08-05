@@ -397,20 +397,10 @@ SetAccount::doApply ()
                         std::string data;
                         if (strUnHex(data, memoElement.getText()) != -1)
                         {
-                            Json::Reader reader;
-                            Json::Value jdata;
-
-                            if (!reader.parse(data, jdata))
-                            {
-                                //terResult = tecJSONERROR;
-                                //return terResult;
-                            }
-                            std::string infostr = jdata["info"].asString();
                             ripple::Blob info;
-                            info.resize(infostr.size());
-                            info.assign(infostr.begin(), infostr.end());
+                            info.resize(data.size());
+                            info.assign(data.begin(), data.end());
                             sle->setFieldVL(sfInfo, info);
-
                         }
                     }
                 }
