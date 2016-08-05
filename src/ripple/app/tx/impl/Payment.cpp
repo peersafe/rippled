@@ -189,6 +189,13 @@ Payment::preflight (PreflightContext const& ctx)
     return preflight2 (ctx);
 }
 
+XRPAmount
+Payment::calculateMaxSpend(STTx const& tx)
+{
+    return beast::zero;
+}
+
+
 TER
 Payment::preclaim(PreclaimContext const& ctx)
 {
