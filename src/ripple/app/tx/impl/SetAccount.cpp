@@ -409,8 +409,7 @@ SetAccount::doApply ()
             }
         }
     }
-    std::string infostr = jdata["type"].asString() + jdata["format"].asString() + jdata["data"].asString();
-
+    std::string infostr = jdata.toStyledString();
     ripple::Blob info;
     info.resize(infostr.size());
     info.assign(infostr.begin(), infostr.end());
