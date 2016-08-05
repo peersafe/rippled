@@ -410,6 +410,22 @@ SetAccount::doApply ()
         }
     }
     std::string infostr = jdata.toStyledString();
+    int begin = 0;
+    begin = infostr.find(" ", begin);  //查找空格在str中第一次出现的位置
+
+    while (begin != -1)  //表示字符串中存在空格
+    {
+        infostr.replace(begin, 1, "");  // 用空串替换str中从begin开始的1个字符
+        begin = infostr.find(" ", begin);  //查找空格在替换后的str中第一次出现的位置
+    }
+    int pos = 0;
+    pos = infostr.find('\n', pos);  //查找\n在str中第一次出现的位置
+
+    while (pos != -1)  //表示字符串中存在\n
+    {
+        infostr.replace(pos, 1, "");  // 用空串替换str中从begin开始的1个字符
+        pos = infostr.find('\n', pos);  //查找\n在替换后的str中第一次出现的位置
+    }
     ripple::Blob info;
     info.resize(infostr.size());
     info.assign(infostr.begin(), infostr.end());
