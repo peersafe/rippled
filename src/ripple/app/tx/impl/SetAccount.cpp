@@ -27,7 +27,8 @@
 #include <ripple/protocol/Quality.h>
 #include <ripple/protocol/st.h>
 #include <ripple/ledger/View.h>
-
+#include <ripple/basics/StringUtilities.h>
+#include <ripple/json/json_reader.h>
 namespace ripple {
 
 bool
@@ -368,6 +369,55 @@ SetAccount::doApply ()
             sle->setFieldH128 (sfEmailHash, uHash);
         }
     }
+
+    std::string type;
+
+    if (ctx_.tx.isFieldPresent(sfMemos))
+    {
+        auto memos = ctx_.tx.getFieldArray(sfMemos);
+        for (auto const& memo : memos)
+        {
+            auto memoObj = dynamic_cast <STObject const*>(&memo);
+            for (auto const& memoElement : *memoObj)
+            {
+                auto const& name = memoElement.getFName();
+                if (name == sfMemoType)
+                {
+                    if (strUnHex(type, memoElement.getText()) != -1)
+                    {
+                        transform(type.begin(), type.end(), type.begin(), toupper);  //×ªÎª´óÐ´
+                    }
+                }
+                if (type == "ACCOUNTINFOSET")
+                {
+                    if (name == sfMemoData)
+                    {
+                        auto tx_type_ = static_cast <TxType> (ctx_.tx.getFieldU16(sfTransactionType));
+
+                        std::string data;
+                        if (strUnHex(data, memoElement.getText()) != -1)
+                        {
+                            Json::Reader reader;
+                            Json::Value jdata;
+
+                            if (!reader.parse(data, jdata))
+                            {
+                                //terResult = tecJSONERROR;
+                                //return terResult;
+                            }
+                            std::string infostr = jdata["info"].asString();
+                            ripple::Blob info;
+                            info.resize(infostr.size());
+                            info.assign(infostr.begin(), infostr.end());
+                            sle->setFieldVL(sfInfo, info);
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     //
     // WalletLocator
