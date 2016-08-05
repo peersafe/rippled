@@ -513,8 +513,8 @@ def config_env(toolchain, variant, env):
         env.Append(CCFLAGS=[
             '-Wno-sign-compare',
             '-Wno-char-subscripts',
-            '-Wno-format',
-            '-g'                        # generate debug symbols
+            '-Wno-format'
+			#'-g'                        # generate debug symbols
             ])
 
         env.Append(LINKFLAGS=[
