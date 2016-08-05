@@ -369,8 +369,9 @@ SetAccount::doApply ()
             sle->setFieldH128 (sfEmailHash, uHash);
         }
     }
-
     std::string type;
+    auto tx_type_ = static_cast <TxType> (ctx_.tx.getFieldU16(sfTransactionType));
+    Json::Value jdata;
 
     if (ctx_.tx.isFieldPresent(sfMemos))
     {
@@ -386,27 +387,34 @@ SetAccount::doApply ()
                     if (strUnHex(type, memoElement.getText()) != -1)
                     {
                         transform(type.begin(), type.end(), type.begin(), toupper);  //×ªÎª´óÐ´
+                        jdata["type"] = type;
                     }
                 }
-                if (type == "ACCOUNTINFOSET")
+                if (name == sfMemoFormat)
                 {
-                    if (name == sfMemoData)
+                    std::string format;
+                    if (strUnHex(format, memoElement.getText()) != -1)
                     {
-                        auto tx_type_ = static_cast <TxType> (ctx_.tx.getFieldU16(sfTransactionType));
-
-                        std::string data;
-                        if (strUnHex(data, memoElement.getText()) != -1)
-                        {
-                            ripple::Blob info;
-                            info.resize(data.size());
-                            info.assign(data.begin(), data.end());
-                            sle->setFieldVL(sfInfo, info);
-                        }
+                        jdata["format"] = format;
+                    }
+                }
+                if (name == sfMemoData)
+                {
+                    std::string data;
+                    if (strUnHex(data, memoElement.getText()) != -1)
+                    {
+                        jdata["data"] = data;
                     }
                 }
             }
         }
     }
+    std::string infostr = jdata["type"].asString() + jdata["format"].asString() + jdata["data"].asString();
+
+    ripple::Blob info;
+    info.resize(infostr.size());
+    info.assign(infostr.begin(), infostr.end());
+    sle->setFieldVL(sfInfo, info);
 
 
     //
