@@ -339,57 +339,6 @@ Payment::doApply ()
 
     TER terResult;
 
-    //在这里可以解析附加字节，同时判断交易类型
-    STArray memos;      //提取附加字节，然后修改目标SLE,准备参与共识-add by chengshuangquan
-    std::string type;
-
-    if (ctx_.tx.isFieldPresent(sfMemos))
-    {
-        memos = ctx_.tx.getFieldArray(sfMemos);
-        for (auto const& memo : memos)
-        {
-            auto memoObj = dynamic_cast <STObject const*>(&memo);
-            for (auto const& memoElement : *memoObj)
-            {
-                auto const& name = memoElement.getFName();
-                if (name == sfMemoType)
-                {
-                    if (strUnHex(type, memoElement.getText()) != -1)
-                    {
-                        transform(type.begin(), type.end(), type.begin(), toupper);  //转为大写
-                    }
-                }
-                else if (type == "ACCOUNTINFOSET")
-                {
-                    if (name == sfMemoData)
-                    {
-                        auto tx_type_ = static_cast <TxType> (ctx_.tx.getFieldU16(sfTransactionType));
-
-                        std::string data;
-                        if (strUnHex(data, memoElement.getText()) != -1)
-                        {
-                            Json::Reader reader;
-                            Json::Value jdata;
-
-                            if (!reader.parse(data, jdata))
-                            {
-                                //terResult = tecJSONERROR;
-                                return terResult;
-                            }
-                            
-                            std::string infostr = jdata["info"].asString();
-                            ripple::Blob info;
-                            info.resize(infostr.size());
-                            info.assign(infostr.begin(), infostr.end());
-                            sleSrc->setFieldVL(sfInfo, info);
-
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     bool const bRipple = paths || sendMax || !saDstAmount.native ();
     // XXX Should sendMax be sufficient to imply ripple?
 
