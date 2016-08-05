@@ -26,8 +26,10 @@
 #include <ripple/protocol/Indexes.h>
 #include <ripple/protocol/JsonFields.h>
 #include <ripple/protocol/types.h>
+#include <ripple/rpc/impl/Utilities.h>
 #include <ripple/rpc/Context.h>
-#include <ripple/rpc/impl/RPCHelpers.h>
+#include <ripple/rpc/impl/AccountFromString.h>
+#include <ripple/rpc/impl/LookupLedger.h>
 
 namespace ripple {
 
@@ -70,6 +72,21 @@ Json::Value doAccountInfo (RPC::Context& context)
     auto const sleAccepted = ledger->read(keylet::account(accountID));
     if (sleAccepted)
     {
+        auto sle = *sleAccepted;
+        ripple::Blob Info;
+
+        if (sle.isFieldPresent(sfInfo))
+        {
+            Info = sle.getFieldVL(sfInfo);
+        }
+
+        if (Info.size() > 0)
+        {
+            std::string Infostr;
+            Infostr.assign(Info.begin(), Info.end());
+            result[jss::Info] = Infostr;
+        }
+
         RPC::injectSLE(jvAccepted, *sleAccepted);
         result[jss::account_data] = jvAccepted;
 

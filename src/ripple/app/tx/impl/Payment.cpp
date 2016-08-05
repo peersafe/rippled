@@ -25,24 +25,12 @@
 #include <ripple/protocol/st.h>
 #include <ripple/protocol/TxFlags.h>
 #include <ripple/protocol/JsonFields.h>
+#include <ripple/json/json_reader.h>
+#include <ripple/basics/StringUtilities.h>
 
 namespace ripple {
 
 // See https://ripple.com/wiki/Transaction_Format#Payment_.280.29
-
-XRPAmount
-Payment::calculateMaxSpend(STTx const& tx)
-{
-    if (tx.isFieldPresent(sfSendMax))
-    {
-        auto const& sendMax = tx[sfSendMax];
-        return sendMax.native() ? sendMax.xrp() : beast::zero;
-    }
-    /* If there's no sfSendMax in XRP, and the sfAmount isn't
-    in XRP, then the transaction can not send XRP. */
-    auto const& saDstAmount = tx.getFieldAmount(sfAmount);
-    return saDstAmount.native() ? saDstAmount.xrp() : beast::zero;
-}
 
 TER
 Payment::preflight (PreflightContext const& ctx)
@@ -330,6 +318,9 @@ Payment::doApply ()
     auto const k = keylet::account(uDstAccountID);
     SLE::pointer sleDst = view().peek (k);
 
+    auto const ksrc = keylet::account(account_);
+    SLE::pointer sleSrc = view().peek(ksrc);
+
     if (!sleDst)
     {
         // Create the account.
@@ -347,6 +338,57 @@ Payment::doApply ()
     }
 
     TER terResult;
+
+    //在这里可以解析附加字节，同时判断交易类型
+    STArray memos;      //提取附加字节，然后修改目标SLE,准备参与共识-add by chengshuangquan
+    std::string type;
+
+    if (ctx_.tx.isFieldPresent(sfMemos))
+    {
+        memos = ctx_.tx.getFieldArray(sfMemos);
+        for (auto const& memo : memos)
+        {
+            auto memoObj = dynamic_cast <STObject const*>(&memo);
+            for (auto const& memoElement : *memoObj)
+            {
+                auto const& name = memoElement.getFName();
+                if (name == sfMemoType)
+                {
+                    if (strUnHex(type, memoElement.getText()) != -1)
+                    {
+                        transform(type.begin(), type.end(), type.begin(), toupper);  //转为大写
+                    }
+                }
+                else if (type == "ACCOUNTINFOSET")
+                {
+                    if (name == sfMemoData)
+                    {
+                        auto tx_type_ = static_cast <TxType> (ctx_.tx.getFieldU16(sfTransactionType));
+
+                        std::string data;
+                        if (strUnHex(data, memoElement.getText()) != -1)
+                        {
+                            Json::Reader reader;
+                            Json::Value jdata;
+
+                            if (!reader.parse(data, jdata))
+                            {
+                                //terResult = tecJSONERROR;
+                                return terResult;
+                            }
+                            
+                            std::string infostr = jdata["info"].asString();
+                            ripple::Blob info;
+                            info.resize(infostr.size());
+                            info.assign(infostr.begin(), infostr.end());
+                            sleSrc->setFieldVL(sfInfo, info);
+
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     bool const bRipple = paths || sendMax || !saDstAmount.native ();
     // XXX Should sendMax be sufficient to imply ripple?
