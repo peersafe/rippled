@@ -82,6 +82,8 @@ My Amplifier XE Results - RippleD
 
 # Build Log
 rippled-build.log
+Builds/Ubuntu/boost_1_59_0/
+build.ninja
 
 # Profiling data
 gmon.out
