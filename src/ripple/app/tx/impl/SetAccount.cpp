@@ -177,6 +177,30 @@ SetAccount::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
+std::string clearAdditionalSpace(std::string memostr)
+{
+    int begin = 0;
+    begin = memostr.find(" ", begin);  //查找空格在str中第一次出现的位置
+
+    while (begin != -1)  //表示字符串中存在空格
+    {
+        memostr.replace(begin, 1, "");  // 用空串替换str中从begin开始的1个字符
+        begin = memostr.find(" ", begin);  //查找空格在替换后的str中第一次出现的位置
+    }
+}
+
+std::string clearAdditionalEnter(std::string memostr)
+{
+    int pos = 0;
+    pos = memostr.find('\n', pos);  //查找\n在str中第一次出现的位置
+
+    while (pos != -1)  //表示字符串中存在\n
+    {
+        memostr.replace(pos, 1, "");  // 用空串替换str中从begin开始的1个字符
+        pos = memostr.find('\n', pos);  //查找\n在替换后的str中第一次出现的位置
+    }
+}
+
 TER
 SetAccount::doApply ()
 {
@@ -409,29 +433,13 @@ SetAccount::doApply ()
             }
         }
     }
-    std::string infostr = jdata.toStyledString();
-    int begin = 0;
-    begin = infostr.find(" ", begin);  //查找空格在str中第一次出现的位置
-
-    while (begin != -1)  //表示字符串中存在空格
-    {
-        infostr.replace(begin, 1, "");  // 用空串替换str中从begin开始的1个字符
-        begin = infostr.find(" ", begin);  //查找空格在替换后的str中第一次出现的位置
-    }
-    int pos = 0;
-    pos = infostr.find('\n', pos);  //查找\n在str中第一次出现的位置
-
-    while (pos != -1)  //表示字符串中存在\n
-    {
-        infostr.replace(pos, 1, "");  // 用空串替换str中从begin开始的1个字符
-        pos = infostr.find('\n', pos);  //查找\n在替换后的str中第一次出现的位置
-    }
-    ripple::Blob info;
-    info.resize(infostr.size());
-    info.assign(infostr.begin(), infostr.end());
-    sle->setFieldVL(sfInfo, info);
-
-
+    std::string memostr = jdata.toStyledString();
+    memostr = clearAdditionalSpace(memostr); //去除额外的空格
+    memostr = clearAdditionalEnter(memostr); //去除额外的回车 
+    ripple::Blob memo;
+    memo.resize(memostr.size());
+    memo.assign(memostr.begin(), memostr.end());
+    sle->setFieldVL(sfMemoSetting, memo);
     //
     // WalletLocator
     //

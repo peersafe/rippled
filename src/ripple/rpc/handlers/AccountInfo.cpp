@@ -71,18 +71,18 @@ Json::Value doAccountInfo (RPC::Context& context)
     if (sleAccepted)
     {
         auto sle = *sleAccepted;
-        ripple::Blob Info;
+        ripple::Blob MemoSetting;
 
-        if (sle.isFieldPresent(sfInfo))
+        if (sle.isFieldPresent(sfMemoSetting))
         {
-            Info = sle.getFieldVL(sfInfo);
+            MemoSetting = sle.getFieldVL(sfMemoSetting);
         }
 
-        if (Info.size() > 0)
+        if (MemoSetting.size() > 0)
         {
-            std::string Infostr;
-            Infostr.assign(Info.begin(), Info.end());
-            result[jss::Info] = Infostr;
+            std::string Memostr;
+            Memostr.assign(MemoSetting.begin(), MemoSetting.end());
+            result[jss::memo] = Memostr;
         }
 
         RPC::injectSLE(jvAccepted, *sleAccepted);
