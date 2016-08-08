@@ -48,6 +48,9 @@ rippled.cfg
 validators.txt
 test/config.js
 
+# Ignore visualStudio2015
+Builds/VisualStudio2015
+
 # Doxygen generated documentation output
 HtmlDocumentation
 
