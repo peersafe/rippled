@@ -196,7 +196,6 @@ SF_Blob const sfCreateCode      = make::one<SF_Blob::type>(&sfCreateCode,    STI
 SF_Blob const sfMemoType        = make::one<SF_Blob::type>(&sfMemoType,      STI_VL, 12, "MemoType");
 SF_Blob const sfMemoData        = make::one<SF_Blob::type>(&sfMemoData,      STI_VL, 13, "MemoData");
 SF_Blob const sfMemoFormat      = make::one<SF_Blob::type>(&sfMemoFormat,    STI_VL, 14, "MemoFormat");
-SF_Blob const sfMemoSetting = make::one<SF_Blob::type>(&sfMemoSetting, STI_VL, 18, "MemoSetting");
 // variable length (uncommon)
 //                                                                                   16 has not been used yet...
 SF_Blob const sfProof          = make::one<SF_Blob::type>(&sfProof,          STI_VL, 17, "Proof");

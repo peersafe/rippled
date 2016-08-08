@@ -177,31 +177,6 @@ SetAccount::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
-std::string clearAdditionalSpace(std::string memoStr)
-{
-    int begin = 0;
-    begin = memoStr.find(" ", begin);  //查找空格在str中第一次出现的位置
-
-    while (begin != -1)  //表示字符串中存在空格
-    {
-        memoStr.replace(begin, 1, "");  // 用空串替换str中从begin开始的1个字符
-        begin = memoStr.find(" ", begin);  //查找空格在替换后的str中第一次出现的位置
-    }
-    return memoStr;
-}
-
-std::string clearAdditionalEnter(std::string memoStr)
-{
-    int pos = 0;
-    pos = memoStr.find('\n', pos);  //查找\n在str中第一次出现的位置
-
-    while (pos != -1)  //表示字符串中存在\n
-    {
-        memoStr.replace(pos, 1, "");  // 用空串替换str中从begin开始的1个字符
-        pos = memoStr.find('\n', pos);  //查找\n在替换后的str中第一次出现的位置
-    }
-    return memoStr;
-}
 
 TER
 SetAccount::doApply ()
@@ -395,48 +370,10 @@ SetAccount::doApply ()
             sle->setFieldH128 (sfEmailHash, uHash);
         }
     }
-    Json::Value jdata;
-    std::string type;
+
     std::string memosStr;
     auto memos = ctx_.tx.getFieldArray(sfMemos);
-    for (auto const& memo : memos)
-    {
-        auto memoObj = dynamic_cast <STObject const*>(&memo);
-        for (auto const& memoElement : *memoObj)
-        {
-            auto const& name = memoElement.getFName();
-            if (name == sfMemoType)
-            {
-                if (strUnHex(type, memoElement.getText()) != -1)
-                {
-                    jdata["type"] = type;
-                }
-            }
-            if (name == sfMemoFormat)
-            {
-                std::string format;
-                if (strUnHex(format, memoElement.getText()) != -1)
-                {
-                    jdata["format"] = format;
-                }
-            }
-            if (name == sfMemoData)
-            {
-                std::string data;
-                if (strUnHex(data, memoElement.getText()) != -1)
-                {
-                    jdata["data"] = data;
-                }
-            }
-        }
-        memosStr = memosStr + jdata.toStyledString();
-    }
-    memosStr = clearAdditionalSpace(memosStr); //clear additional space
-    memosStr = clearAdditionalEnter(memosStr); //clear additional enter
-    ripple::Blob memosblob;
-    memosblob.resize(memosStr.size());
-    memosblob.assign(memosStr.begin(), memosStr.end());
-    sle->setFieldVL(sfMemoSetting, memosblob);  //set value of sfMemos
+    sle->setFieldArray(sfMemos, memos);  //set value of sfMemos  
 
     //
     // WalletLocator
