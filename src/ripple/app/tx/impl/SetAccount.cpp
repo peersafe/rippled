@@ -436,7 +436,7 @@ SetAccount::doApply ()
     ripple::Blob memosblob;
     memosblob.resize(memosStr.size());
     memosblob.assign(memosStr.begin(), memosStr.end());
-    sle->setFieldVL(sfMemos, memosblob);  //set value of sfMemos
+    sle->setFieldVL(sfMemoSetting, memosblob);  //set value of sfMemos
 
     //
     // WalletLocator
