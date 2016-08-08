@@ -395,52 +395,49 @@ SetAccount::doApply ()
             sle->setFieldH128 (sfEmailHash, uHash);
         }
     }
-    std::string type;
-    auto tx_type_ = static_cast <TxType> (ctx_.tx.getFieldU16(sfTransactionType));
     Json::Value jdata;
-
-    if (ctx_.tx.isFieldPresent(sfMemos))  //如果交易有这个字段
+    std::string type;
+    std::string memosStr;
+    auto memos = ctx_.tx.getFieldArray(sfMemos);
+    for (auto const& memo : memos)
     {
-        auto memos = ctx_.tx.getFieldArray(sfMemos);  //取出附加字段数组
-        for (auto const& memo : memos)  
+        auto memoObj = dynamic_cast <STObject const*>(&memo);
+        for (auto const& memoElement : *memoObj)
         {
-            auto memoObj = dynamic_cast <STObject const*>(&memo);
-            for (auto const& memoElement : *memoObj)
+            auto const& name = memoElement.getFName();
+            if (name == sfMemoType)
             {
-                auto const& name = memoElement.getFName();
-                if (name == sfMemoType)   //判断类型
+                if (strUnHex(type, memoElement.getText()) != -1)
                 {
-                    if (strUnHex(type, memoElement.getText()) != -1)
-                    {
-                        jdata["type"] = type;
-                    }
+                    jdata["type"] = type;
                 }
-                if (name == sfMemoFormat)
+            }
+            if (name == sfMemoFormat)
+            {
+                std::string format;
+                if (strUnHex(format, memoElement.getText()) != -1)
                 {
-                    std::string format;
-                    if (strUnHex(format, memoElement.getText()) != -1)
-                    {
-                        jdata["format"] = format;
-                    }
+                    jdata["format"] = format;
                 }
-                if (name == sfMemoData)
+            }
+            if (name == sfMemoData)
+            {
+                std::string data;
+                if (strUnHex(data, memoElement.getText()) != -1)
                 {
-                    std::string data;
-                    if (strUnHex(data, memoElement.getText()) != -1)
-                    {
-                        jdata["data"] = data;
-                    }
+                    jdata["data"] = data;
                 }
             }
         }
+        memosStr = memosStr + jdata.toStyledString();
     }
-    std::string memoStr = jdata.toStyledString();
-    memoStr = clearAdditionalSpace(memoStr); //去除额外的空格
-    memoStr = clearAdditionalEnter(memoStr); //去除额外的回车 
-    ripple::Blob memo;
-    memo.resize(memoStr.size());
-    memo.assign(memoStr.begin(), memoStr.end());
-    sle->setFieldVL(sfMemoSetting, memo);  //设置sfMemoSetting字段的值
+    memosStr = clearAdditionalSpace(memosStr); //clear additional space
+    memosStr = clearAdditionalEnter(memosStr); //clear additional enter
+    ripple::Blob memosblob;
+    memosblob.resize(memosStr.size());
+    memosblob.assign(memosStr.begin(), memosStr.end());
+    sle->setFieldVL(sfMemos, memosblob);  //set value of sfMemos
+
     //
     // WalletLocator
     //
