@@ -177,30 +177,30 @@ SetAccount::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
-std::string clearAdditionalSpace(std::string memostr)
+std::string clearAdditionalSpace(std::string memoStr)
 {
     int begin = 0;
-    begin = memostr.find(" ", begin);  //查找空格在str中第一次出现的位置
+    begin = memoStr.find(" ", begin);  //查找空格在str中第一次出现的位置
 
     while (begin != -1)  //表示字符串中存在空格
     {
-        memostr.replace(begin, 1, "");  // 用空串替换str中从begin开始的1个字符
-        begin = memostr.find(" ", begin);  //查找空格在替换后的str中第一次出现的位置
+        memoStr.replace(begin, 1, "");  // 用空串替换str中从begin开始的1个字符
+        begin = memoStr.find(" ", begin);  //查找空格在替换后的str中第一次出现的位置
     }
-    return memostr;
+    return memoStr;
 }
 
-std::string clearAdditionalEnter(std::string memostr)
+std::string clearAdditionalEnter(std::string memoStr)
 {
     int pos = 0;
-    pos = memostr.find('\n', pos);  //查找\n在str中第一次出现的位置
+    pos = memoStr.find('\n', pos);  //查找\n在str中第一次出现的位置
 
     while (pos != -1)  //表示字符串中存在\n
     {
-        memostr.replace(pos, 1, "");  // 用空串替换str中从begin开始的1个字符
-        pos = memostr.find('\n', pos);  //查找\n在替换后的str中第一次出现的位置
+        memoStr.replace(pos, 1, "");  // 用空串替换str中从begin开始的1个字符
+        pos = memoStr.find('\n', pos);  //查找\n在替换后的str中第一次出现的位置
     }
-    return memostr;
+    return memoStr;
 }
 
 TER
@@ -399,20 +399,19 @@ SetAccount::doApply ()
     auto tx_type_ = static_cast <TxType> (ctx_.tx.getFieldU16(sfTransactionType));
     Json::Value jdata;
 
-    if (ctx_.tx.isFieldPresent(sfMemos))
+    if (ctx_.tx.isFieldPresent(sfMemos))  //如果交易有这个字段
     {
-        auto memos = ctx_.tx.getFieldArray(sfMemos);
-        for (auto const& memo : memos)
+        auto memos = ctx_.tx.getFieldArray(sfMemos);  //取出附加字段数组
+        for (auto const& memo : memos)  
         {
             auto memoObj = dynamic_cast <STObject const*>(&memo);
             for (auto const& memoElement : *memoObj)
             {
                 auto const& name = memoElement.getFName();
-                if (name == sfMemoType)
+                if (name == sfMemoType)   //判断类型
                 {
                     if (strUnHex(type, memoElement.getText()) != -1)
                     {
-                        transform(type.begin(), type.end(), type.begin(), toupper);  //转为大写
                         jdata["type"] = type;
                     }
                 }
@@ -435,13 +434,13 @@ SetAccount::doApply ()
             }
         }
     }
-    std::string memostr = jdata.toStyledString();
-    memostr = clearAdditionalSpace(memostr); //去除额外的空格
-    memostr = clearAdditionalEnter(memostr); //去除额外的回车 
+    std::string memoStr = jdata.toStyledString();
+    memoStr = clearAdditionalSpace(memoStr); //去除额外的空格
+    memoStr = clearAdditionalEnter(memoStr); //去除额外的回车 
     ripple::Blob memo;
-    memo.resize(memostr.size());
-    memo.assign(memostr.begin(), memostr.end());
-    sle->setFieldVL(sfMemoSetting, memo);
+    memo.resize(memoStr.size());
+    memo.assign(memoStr.begin(), memoStr.end());
+    sle->setFieldVL(sfMemoSetting, memo);  //设置sfMemoSetting字段的值
     //
     // WalletLocator
     //
