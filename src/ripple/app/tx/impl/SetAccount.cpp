@@ -187,6 +187,7 @@ std::string clearAdditionalSpace(std::string memostr)
         memostr.replace(begin, 1, "");  // 用空串替换str中从begin开始的1个字符
         begin = memostr.find(" ", begin);  //查找空格在替换后的str中第一次出现的位置
     }
+    return memostr;
 }
 
 std::string clearAdditionalEnter(std::string memostr)
@@ -199,6 +200,7 @@ std::string clearAdditionalEnter(std::string memostr)
         memostr.replace(pos, 1, "");  // 用空串替换str中从begin开始的1个字符
         pos = memostr.find('\n', pos);  //查找\n在替换后的str中第一次出现的位置
     }
+    return memostr;
 }
 
 TER
