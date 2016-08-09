@@ -4,6 +4,7 @@ var Remote    = require('ripple-lib').Remote;
 var testutils = require('./testutils');
 var config    = testutils.init_config();
 
+
 suite('Account set', function() {
   var $ = { };
 
@@ -212,7 +213,7 @@ suite('Account set', function() {
         .account_set('root')
         .set_flags('DisallowXRP')
         .on('submitted', function (m) {
-          //console.log('proposed: %s', JSON.stringify(m));
+          console.log('proposed: %s', JSON.stringify(m));
           callback(m.engine_result === 'tesSUCCESS' ? null : new Error(m));
         })
         .submit();
@@ -272,4 +273,48 @@ suite('Account set', function() {
       done();
     });
   });
+
+  test('set memo', function(done) {
+    var self = this;
+
+    var steps = [
+      function (callback) {
+        self.what = 'Set memo.';
+
+        $.remote.transaction()
+        .account_set('root')
+        .set_flags('memo')
+        .addMemo('peersafe')
+        .on('submitted', function (m) {
+          console.log('proposed: %s', JSON.stringify(m));
+          callback(m.engine_result === 'tesSUCCESS' ? null : new Error(m));
+        })
+        .submit();
+      },
+      function (callback) {
+        self.what = 'Check memo';
+
+        $.remote.request_account_flags('root', 'current')
+        .on('error', callback)
+        .on('success', function (m) {
+          console.log(m.node.Memos[0].Memo.MemoType); 
+		  //expect(m.node.Memos[0].Memo.MemoType).to.be.equal("7065657273616665");
+          var wrong = !!(m.node.Flags & Remote.flags.account_root.DisallowXRP);
+
+          if (wrong) {
+            console.log('Check memo: failed: %s', JSON.stringify(m));
+          }
+
+          callback(wrong ? new Error(m) : null);
+        })
+        .request();
+      }
+    ]
+
+    async.waterfall(steps, function(err) {
+      assert(!err);
+      done();
+    });
+  });
+  
 });

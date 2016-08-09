@@ -220,7 +220,8 @@ Remote.flags = {
     DisableMaster: 0x00100000, // force regular key
     NoFreeze: 0x00200000, // permanently disallowed freezing trustlines
     GlobalFreeze: 0x00400000, // trustlines globally frozen
-    DefaultRipple: 0x00800000
+    DefaultRipple: 0x00800000,  
+    memo:0x01000000
   },
   // Offer
   offer: {

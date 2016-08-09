@@ -103,7 +103,8 @@ Transaction.flags = {
     RequireAuth: 0x00040000,
     OptionalAuth: 0x00080000,
     DisallowXRP: 0x00100000,
-    AllowXRP: 0x00200000
+    AllowXRP: 0x00200000,
+    memo:0x01000000
   },
 
   TrustSet: {
