@@ -66,6 +66,7 @@ LedgerFormats::LedgerFormats ()
             << SOElement (sfPreviousTxnID,       SOE_REQUIRED)
             << SOElement (sfPreviousTxnLgrSeq,   SOE_REQUIRED)
             << SOElement (sfExpiration,          SOE_OPTIONAL)
+            << SOElement (sfMemos,               SOE_OPTIONAL)
             ;
 
     add ("RippleState", ltRIPPLE_STATE)

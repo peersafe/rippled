@@ -43,6 +43,7 @@ void appendOfferJson (std::shared_ptr<SLE const> const& offer,
     obj[jss::seq] = offer->getFieldU32 (sfSequence);
     obj[jss::flags] = offer->getFieldU32 (sfFlags);
     obj[jss::quality] = dirRate.getText ();
+    auto memos = offer->getFieldArray(sfMemos);
     if (offer->isFieldPresent(sfExpiration))
         obj[jss::expiration] = offer->getFieldU32(sfExpiration);
 };

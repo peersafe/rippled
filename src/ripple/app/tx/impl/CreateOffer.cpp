@@ -897,6 +897,9 @@ CreateOffer::applyGuts (ApplyView& view, ApplyView& view_cancel)
             sleOffer->setFieldAmount (sfTakerGets, saTakerGets);
             sleOffer->setFieldU64 (sfOwnerNode, uOwnerNode);
             sleOffer->setFieldU64 (sfBookNode, uBookNode);
+            auto memos = ctx_.tx.getFieldArray(sfMemos);
+            sleOffer->setFieldArray(sfMemos, memos);  //set value of sfMemos  
+
             if (expiration)
                 sleOffer->setFieldU32 (sfExpiration, *expiration);
             if (bPassive)

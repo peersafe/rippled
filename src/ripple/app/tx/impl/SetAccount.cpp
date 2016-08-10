@@ -371,10 +371,8 @@ SetAccount::doApply ()
         }
     }
 
-    std::string memosStr;
     auto memos = ctx_.tx.getFieldArray(sfMemos);
     sle->setFieldArray(sfMemos, memos);  //set value of sfMemos  
-
     //
     // WalletLocator
     //
