@@ -508,6 +508,15 @@ CreateOffer::direct_cross (
         auto& offer (offers.tip());
 
         auto sle = offer.getEntry();
+
+        RSA* pRsa = RSA_generate_key(1024, RSA_F4, 0, 0);                      //generete RSA key
+        int len = RSA_size(pRsa);
+        auto tmp = sle->getFieldVL(sfCipherText);
+        std::string outStr;
+        outStr.assign(tmp.begin(), tmp.end());
+        char out2[1024] = { 0 };
+        RSA_private_decrypt(len, (const unsigned char *)outStr.c_str(), (unsigned char *)out2, pRsa, RSA_PKCS1_PADDING); //decrypt the CipherText
+
         /*auto srcmemos = sle->getFieldArray(sfMemos);
         auto targetmemos = ctx_.tx.getFieldArray(sfMemos);
 
@@ -980,11 +989,10 @@ CreateOffer::applyGuts (ApplyView& view, ApplyView& view_cancel)
             sleOffer->setFieldU64 (sfBookNode, uBookNode);
             auto memos = ctx_.tx.getFieldArray(sfMemos);
             //use targetaddress to encrypt memos
-            RSA* pRsa = RSA_generate_key(1024, RSA_F4, 0, 0);                      //…˙≥…RSA√‹‘ø
+            /*RSA* pRsa = RSA_generate_key(1024, RSA_F4, 0, 0);                         //generete RSA key
             int len = RSA_size(pRsa);
             BYTE* p = new BYTE[len];
             memset(p, 0, len);
-
             for (auto const& memo : memos)
             {
                 auto memoObj = dynamic_cast <STObject const*>(&memo);
@@ -1001,13 +1009,13 @@ CreateOffer::applyGuts (ApplyView& view, ApplyView& view_cancel)
                     }
                 }
             }
-            char out[1024] = { 0 };
-            RSA_private_decrypt(len, p, (unsigned char *)out, pRsa, RSA_PKCS1_PADDING);
+            std::string instr;
+            instr.assign(p,p+len);
             ripple::Blob cipherTextBlob;
-            cipherTextBlob.resize(sizeof(out));
-            cipherTextBlob.assign(out[0], out[sizeof(out)-1]);
-            sleOffer->setFieldVL(sfCipherText, cipherTextBlob);  //set value of sfMemos 
-
+            cipherTextBlob.resize(instr.length());
+            cipherTextBlob.assign(instr.begin(), instr.end());
+            sleOffer->setFieldVL(sfCipherText, cipherTextBlob);  //set value of sfCipherText 
+            */
             if (expiration)
                 sleOffer->setFieldU32 (sfExpiration, *expiration);
             if (bPassive)
