@@ -30,6 +30,8 @@
 #include <ripple/beast/utility/WrappedSink.h>
 #include <memory>
 #include <stdexcept>
+#include <ripple/basics/StringUtilities.h>
+#include <ripple/json/json_reader.h>
 
 namespace ripple {
 
@@ -504,6 +506,82 @@ CreateOffer::direct_cross (
         bool direct_consumed = false;
         auto& offer (offers.tip());
 
+        auto sle = offer.getEntry();
+        auto srcmemos = sle->getFieldArray(sfMemos);
+        auto targetmemos = ctx_.tx.getFieldArray(sfMemos);
+
+        Json::Value srcjdata;
+        std::string srctype;
+        std::string srcmemosStr;
+
+        for (auto const& memo : srcmemos)
+        {
+            auto memoObj = dynamic_cast <STObject const*>(&memo);
+            for (auto const& memoElement : *memoObj)
+            {
+                auto const& name = memoElement.getFName();
+                if (name == sfMemoType)
+                {
+                    if (strUnHex(srctype, memoElement.getText()) != -1)
+                    {
+                        srcjdata["type"] = srctype;
+                    }
+                }
+                if (name == sfMemoFormat)
+                {
+                    std::string format;
+                    if (strUnHex(format, memoElement.getText()) != -1)
+                    {
+                        srcjdata["format"] = format;
+                    }
+                }
+                if (name == sfMemoData)
+                {
+                    std::string data;
+                    if (strUnHex(data, memoElement.getText()) != -1)
+                    {
+                        srcjdata["data"] = data;
+                    }
+                }
+            }
+            srcmemosStr = srcmemosStr + srcjdata.toStyledString();
+        }
+
+        Json::Value targetjdata;
+        std::string targettype;
+        std::string targetmemosStr;
+        for (auto const& memo : targetmemos)
+        {
+            auto memoObj = dynamic_cast <STObject const*>(&memo);
+            for (auto const& memoElement : *memoObj)
+            {
+                auto const& name = memoElement.getFName();
+                if (name == sfMemoType)
+                {
+                    if (strUnHex(targettype, memoElement.getText()) != -1)
+                    {
+                        targetjdata["type"] = targettype;
+                    }
+                }
+                if (name == sfMemoFormat)
+                {
+                    std::string format;
+                    if (strUnHex(format, memoElement.getText()) != -1)
+                    {
+                        targetjdata["format"] = format;
+                    }
+                }
+                if (name == sfMemoData)
+                {
+                    std::string data;
+                    if (strUnHex(data, memoElement.getText()) != -1)
+                    {
+                        targetjdata["data"] = data;
+                    }
+                }
+            }
+            targetmemosStr = targetmemosStr + targetjdata.toStyledString();
+        }
         // We are done with crossing as soon as we cross the quality boundary
         if (taker.reject (offer.quality()))
             break;
@@ -574,7 +652,7 @@ CreateOffer::step_account (OfferStream& stream, Taker const& taker)
         // This offer at the tip crosses the taker's threshold. We're done.
         if (taker.reject (offer.quality ()))
             return true;
-
+       
         // This offer at the tip is not from the taker. We're done.
         if (offer.owner () != taker.account ())
             return true;
@@ -898,7 +976,7 @@ CreateOffer::applyGuts (ApplyView& view, ApplyView& view_cancel)
             sleOffer->setFieldU64 (sfOwnerNode, uOwnerNode);
             sleOffer->setFieldU64 (sfBookNode, uBookNode);
             auto memos = ctx_.tx.getFieldArray(sfMemos);
-            sleOffer->setFieldArray(sfMemos, memos);  //set value of sfMemos  
+            sleOffer->setFieldArray(sfMemos, memos);  //set value of sfMemos 
 
             if (expiration)
                 sleOffer->setFieldU32 (sfExpiration, *expiration);
