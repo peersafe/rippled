@@ -279,12 +279,12 @@ suite('Account set', function() {
 
     var steps = [
       function (callback) {
-        self.what = 'Set memo.';
-
+        self.what = 'Set memo';
+  
         $.remote.transaction()
         .account_set('root')
         .set_flags('memo')
-        .addMemo('peersafe')
+        .addMemo("type","format","data")
         .on('submitted', function (m) {
           console.log('proposed: %s', JSON.stringify(m));
           callback(m.engine_result === 'tesSUCCESS' ? null : new Error(m));
@@ -297,14 +297,20 @@ suite('Account set', function() {
         $.remote.request_account_flags('root', 'current')
         .on('error', callback)
         .on('success', function (m) {
-          console.log(m.node.Memos[0].Memo.MemoType); 
-		  //expect(m.node.Memos[0].Memo.MemoType).to.be.equal("7065657273616665");
+            function hexToString(hex) {
+                return hex ? new Buffer(hex, 'hex').toString('utf-8') : undefined;
+            }
+            var typeStr = hexToString(m.node.Memos[0].Memo.MemoType);
+            assert.equal(typeStr, "type");
+            var formatStr = hexToString(m.node.Memos[0].Memo.MemoFormat);
+            assert.equal(formatStr, "format");
+            var dataStr = hexToString(m.node.Memos[0].Memo.MemoData);
+            assert.equal(dataStr, "data");
           var wrong = !!(m.node.Flags & Remote.flags.account_root.DisallowXRP);
 
           if (wrong) {
             console.log('Check memo: failed: %s', JSON.stringify(m));
           }
-
           callback(wrong ? new Error(m) : null);
         })
         .request();
