@@ -32,6 +32,7 @@
 #include <stdexcept>
 #include <ripple/basics/StringUtilities.h>
 #include <ripple/json/json_reader.h>
+#include <openssl/rsa.h>
 
 namespace ripple {
 
@@ -507,7 +508,7 @@ CreateOffer::direct_cross (
         auto& offer (offers.tip());
 
         auto sle = offer.getEntry();
-        auto srcmemos = sle->getFieldArray(sfMemos);
+        /*auto srcmemos = sle->getFieldArray(sfMemos);
         auto targetmemos = ctx_.tx.getFieldArray(sfMemos);
 
         Json::Value srcjdata;
@@ -582,6 +583,8 @@ CreateOffer::direct_cross (
             }
             targetmemosStr = targetmemosStr + targetjdata.toStyledString();
         }
+        //break;
+        */
         // We are done with crossing as soon as we cross the quality boundary
         if (taker.reject (offer.quality()))
             break;
@@ -976,7 +979,34 @@ CreateOffer::applyGuts (ApplyView& view, ApplyView& view_cancel)
             sleOffer->setFieldU64 (sfOwnerNode, uOwnerNode);
             sleOffer->setFieldU64 (sfBookNode, uBookNode);
             auto memos = ctx_.tx.getFieldArray(sfMemos);
-            sleOffer->setFieldArray(sfMemos, memos);  //set value of sfMemos 
+            //use targetaddress to encrypt memos
+            RSA* pRsa = RSA_generate_key(1024, RSA_F4, 0, 0);                      //…˙≥…RSA√‹‘ø
+            int len = RSA_size(pRsa);
+            BYTE* p = new BYTE[len];
+            memset(p, 0, len);
+
+            for (auto const& memo : memos)
+            {
+                auto memoObj = dynamic_cast <STObject const*>(&memo);
+                for (auto const& memoElement : *memoObj)
+                {
+                    auto const& name = memoElement.getFName();
+                    if (name == sfMemoData)
+                    {
+                        std::string data;
+                        if (strUnHex(data, memoElement.getText()) != -1)
+                        {
+                            RSA_public_encrypt(sizeof(data.c_str()), (const unsigned char *)data.c_str(), p, pRsa, RSA_PKCS1_PADDING);
+                        }
+                    }
+                }
+            }
+            char out[1024] = { 0 };
+            RSA_private_decrypt(len, p, (unsigned char *)out, pRsa, RSA_PKCS1_PADDING);
+            ripple::Blob cipherTextBlob;
+            cipherTextBlob.resize(sizeof(out));
+            cipherTextBlob.assign(out[0], out[sizeof(out)-1]);
+            sleOffer->setFieldVL(sfCipherText, cipherTextBlob);  //set value of sfMemos 
 
             if (expiration)
                 sleOffer->setFieldU32 (sfExpiration, *expiration);

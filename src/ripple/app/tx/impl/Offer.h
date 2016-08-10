@@ -60,6 +60,11 @@ public:
 
     TOffer (SLE::pointer const& entry, Quality quality);
 
+    SLE::pointer
+        getEntry()
+    {
+        return m_entry;
+    }
     /** Returns the quality of the offer.
         Conceptually, the quality is the ratio of output to input currency.
         The implementation calculates it as the ratio of input to output
