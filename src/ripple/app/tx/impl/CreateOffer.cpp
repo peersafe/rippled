@@ -33,6 +33,8 @@
 #include <ripple/basics/StringUtilities.h>
 #include <ripple/json/json_reader.h>
 #include <openssl/rsa.h>
+#include <ripple/rpc/Context.h>
+#include <ripple/rpc/impl/RPCHelpers.h>
 
 namespace ripple {
 
@@ -509,12 +511,16 @@ CreateOffer::direct_cross (
 
         auto sle = offer.getEntry();
         auto srcmemos = sle->getFieldArray(sfMemos);
-        auto targetmemos = ctx_.tx.getFieldArray(sfMemos);
+        auto targetAccount = ctx_.tx.getAccountID(sfAccount);
       
+        bool bStrict = true;
+        AccountID accountID;
+
         Json::Value srcjdata;
         std::string srctype;
         std::string srcmemosStr;
         
+        bool isMatched = false;
         for (auto const& memo : srcmemos)
         {
             auto memoObj = dynamic_cast <STObject const*>(&memo);
@@ -526,11 +532,21 @@ CreateOffer::direct_cross (
                     std::string data;
                     if (strUnHex(data, memoElement.getText()) != -1)
                     {
-                        srcjdata["data"] = data;
+                        RPC::accountFromString(accountID, data, bStrict);
+                        if (accountID == targetAccount)  //if account in ctx equal to matched order's account 
+                        {
+                            isMatched = true;
+                        }
                     }
                 }
             }
         }
+        if (isMatched == false)
+        {
+            JLOG(j_.debug()) << "account can not matched,so order can not consume!";
+            break;
+        }
+            
 
         // We are done with crossing as soon as we cross the quality boundary
         if (taker.reject (offer.quality()))
