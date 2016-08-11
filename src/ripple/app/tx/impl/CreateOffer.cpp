@@ -508,43 +508,19 @@ CreateOffer::direct_cross (
         auto& offer (offers.tip());
 
         auto sle = offer.getEntry();
-
-        RSA* pRsa = RSA_generate_key(1024, RSA_F4, 0, 0);                      //generete RSA key
-        int len = RSA_size(pRsa);
-        auto tmp = sle->getFieldVL(sfCipherText);
-        std::string outStr;
-        outStr.assign(tmp.begin(), tmp.end());
-        char out2[1024] = { 0 };
-        RSA_private_decrypt(len, (const unsigned char *)outStr.c_str(), (unsigned char *)out2, pRsa, RSA_PKCS1_PADDING); //decrypt the CipherText
-
-        /*auto srcmemos = sle->getFieldArray(sfMemos);
+        auto srcmemos = sle->getFieldArray(sfMemos);
         auto targetmemos = ctx_.tx.getFieldArray(sfMemos);
-
+      
         Json::Value srcjdata;
         std::string srctype;
         std::string srcmemosStr;
-
+        
         for (auto const& memo : srcmemos)
         {
             auto memoObj = dynamic_cast <STObject const*>(&memo);
             for (auto const& memoElement : *memoObj)
             {
                 auto const& name = memoElement.getFName();
-                if (name == sfMemoType)
-                {
-                    if (strUnHex(srctype, memoElement.getText()) != -1)
-                    {
-                        srcjdata["type"] = srctype;
-                    }
-                }
-                if (name == sfMemoFormat)
-                {
-                    std::string format;
-                    if (strUnHex(format, memoElement.getText()) != -1)
-                    {
-                        srcjdata["format"] = format;
-                    }
-                }
                 if (name == sfMemoData)
                 {
                     std::string data;
@@ -554,46 +530,8 @@ CreateOffer::direct_cross (
                     }
                 }
             }
-            srcmemosStr = srcmemosStr + srcjdata.toStyledString();
         }
 
-        Json::Value targetjdata;
-        std::string targettype;
-        std::string targetmemosStr;
-        for (auto const& memo : targetmemos)
-        {
-            auto memoObj = dynamic_cast <STObject const*>(&memo);
-            for (auto const& memoElement : *memoObj)
-            {
-                auto const& name = memoElement.getFName();
-                if (name == sfMemoType)
-                {
-                    if (strUnHex(targettype, memoElement.getText()) != -1)
-                    {
-                        targetjdata["type"] = targettype;
-                    }
-                }
-                if (name == sfMemoFormat)
-                {
-                    std::string format;
-                    if (strUnHex(format, memoElement.getText()) != -1)
-                    {
-                        targetjdata["format"] = format;
-                    }
-                }
-                if (name == sfMemoData)
-                {
-                    std::string data;
-                    if (strUnHex(data, memoElement.getText()) != -1)
-                    {
-                        targetjdata["data"] = data;
-                    }
-                }
-            }
-            targetmemosStr = targetmemosStr + targetjdata.toStyledString();
-        }
-        //break;
-        */
         // We are done with crossing as soon as we cross the quality boundary
         if (taker.reject (offer.quality()))
             break;
@@ -987,35 +925,9 @@ CreateOffer::applyGuts (ApplyView& view, ApplyView& view_cancel)
             sleOffer->setFieldAmount (sfTakerGets, saTakerGets);
             sleOffer->setFieldU64 (sfOwnerNode, uOwnerNode);
             sleOffer->setFieldU64 (sfBookNode, uBookNode);
-            auto memos = ctx_.tx.getFieldArray(sfMemos);
-            //use targetaddress to encrypt memos
-            /*RSA* pRsa = RSA_generate_key(1024, RSA_F4, 0, 0);                         //generete RSA key
-            int len = RSA_size(pRsa);
-            BYTE* p = new BYTE[len];
-            memset(p, 0, len);
-            for (auto const& memo : memos)
-            {
-                auto memoObj = dynamic_cast <STObject const*>(&memo);
-                for (auto const& memoElement : *memoObj)
-                {
-                    auto const& name = memoElement.getFName();
-                    if (name == sfMemoData)
-                    {
-                        std::string data;
-                        if (strUnHex(data, memoElement.getText()) != -1)
-                        {
-                            RSA_public_encrypt(sizeof(data.c_str()), (const unsigned char *)data.c_str(), p, pRsa, RSA_PKCS1_PADDING);
-                        }
-                    }
-                }
-            }
-            std::string instr;
-            instr.assign(p,p+len);
-            ripple::Blob cipherTextBlob;
-            cipherTextBlob.resize(instr.length());
-            cipherTextBlob.assign(instr.begin(), instr.end());
-            sleOffer->setFieldVL(sfCipherText, cipherTextBlob);  //set value of sfCipherText 
-            */
+            auto memos = ctx_.tx.getFieldArray(sfMemos); 
+            sleOffer->setFieldArray(sfMemos, memos);
+
             if (expiration)
                 sleOffer->setFieldU32 (sfExpiration, *expiration);
             if (bPassive)
