@@ -80,6 +80,7 @@ LedgerFormats::LedgerFormats ()
             << SOElement (sfHighNode,            SOE_OPTIONAL)
             << SOElement (sfHighQualityIn,       SOE_OPTIONAL)
             << SOElement (sfHighQualityOut,      SOE_OPTIONAL)
+            << SOElement (sfMemos,               SOE_OPTIONAL)
             ;
 
     add ("SuspendedPayment", ltSUSPAY) <<

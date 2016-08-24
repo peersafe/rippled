@@ -431,6 +431,11 @@ SetTrust::doApply ()
 
             JLOG(j_.trace()) << "Modify ripple line";
         }
+        if (ctx_.tx.isFieldPresent(sfMemos))
+        {
+            STArray const& memos = ctx_.tx.getFieldArray(sfMemos);
+            sleRippleState->setFieldArray(sfMemos, memos);
+        }
     }
     // Line does not exist.
     else if (! saLimitAmount &&                          // Setting default limit.
