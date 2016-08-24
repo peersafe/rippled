@@ -220,6 +220,10 @@ SetTrust::doApply ()
     SLE::pointer sleRippleState = view().peek (
         keylet::line(account_, uDstAccountID, currency));
 
+    STArray memos;
+    if (ctx_.tx.isFieldPresent(sfMemos))
+        memos = ctx_.tx.getFieldArray(sfMemos);
+
     if (sleRippleState)
     {
         STAmount        saLowBalance;
@@ -431,11 +435,8 @@ SetTrust::doApply ()
 
             JLOG(j_.trace()) << "Modify ripple line";
         }
-        if (ctx_.tx.isFieldPresent(sfMemos))
-        {
-            STArray const& memos = ctx_.tx.getFieldArray(sfMemos);
-            sleRippleState->setFieldArray(sfMemos, memos);
-        }
+
+        sleRippleState->setFieldArray(sfMemos, memos);
     }
     // Line does not exist.
     else if (! saLimitAmount &&                          // Setting default limit.
@@ -480,7 +481,7 @@ SetTrust::doApply ()
             saBalance,
             saLimitAllow,       // Limit for who is being charged.
             uQualityIn,
-            uQualityOut, viewJ);
+            uQualityOut, viewJ, memos);
     }
 
     return terResult;

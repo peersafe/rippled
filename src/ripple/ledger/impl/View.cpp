@@ -1028,65 +1028,69 @@ trustCreate (ApplyView& view,
                                         // Issuer should be the account being set.
     std::uint32_t uQualityIn,
     std::uint32_t uQualityOut,
-    beast::Journal j)
+    beast::Journal j,
+    STArray memos)
 {
-    JLOG (j.trace())
-        << "trustCreate: " << to_string (uSrcAccountID) << ", "
-        << to_string (uDstAccountID) << ", " << saBalance.getFullText ();
+    JLOG(j.trace())
+        << "trustCreate: " << to_string(uSrcAccountID) << ", "
+        << to_string(uDstAccountID) << ", " << saBalance.getFullText();
 
-    auto const& uLowAccountID   = !bSrcHigh ? uSrcAccountID : uDstAccountID;
-    auto const& uHighAccountID  =  bSrcHigh ? uSrcAccountID : uDstAccountID;
+    auto const& uLowAccountID = !bSrcHigh ? uSrcAccountID : uDstAccountID;
+    auto const& uHighAccountID = bSrcHigh ? uSrcAccountID : uDstAccountID;
 
     auto const sleRippleState = std::make_shared<SLE>(
         ltRIPPLE_STATE, uIndex);
-    view.insert (sleRippleState);
+    view.insert(sleRippleState);
+
 
     std::uint64_t   uLowNode;
     std::uint64_t   uHighNode;
 
     TER terResult;
 
-    std::tie (terResult, std::ignore) = dirAdd (view,
-        uLowNode, keylet::ownerDir (uLowAccountID),
-        sleRippleState->getIndex (),
-        describeOwnerDir (uLowAccountID), j);
+    std::tie(terResult, std::ignore) = dirAdd(view,
+        uLowNode, keylet::ownerDir(uLowAccountID),
+        sleRippleState->getIndex(),
+        describeOwnerDir(uLowAccountID), j);
 
     if (tesSUCCESS == terResult)
     {
-        std::tie (terResult, std::ignore) = dirAdd (view,
-            uHighNode, keylet::ownerDir (uHighAccountID),
-            sleRippleState->getIndex (),
-            describeOwnerDir (uHighAccountID), j);
+        std::tie(terResult, std::ignore) = dirAdd(view,
+            uHighNode, keylet::ownerDir(uHighAccountID),
+            sleRippleState->getIndex(),
+            describeOwnerDir(uHighAccountID), j);
     }
 
     if (tesSUCCESS == terResult)
     {
-        const bool bSetDst = saLimit.getIssuer () == uDstAccountID;
+        const bool bSetDst = saLimit.getIssuer() == uDstAccountID;
         const bool bSetHigh = bSrcHigh ^ bSetDst;
 
-        assert (sleAccount->getAccountID (sfAccount) ==
+        assert(sleAccount->getAccountID(sfAccount) ==
             (bSetHigh ? uHighAccountID : uLowAccountID));
-        auto slePeer = view.peek (keylet::account(
+        auto slePeer = view.peek(keylet::account(
             bSetHigh ? uLowAccountID : uHighAccountID));
-        assert (slePeer);
+        assert(slePeer);
 
         // Remember deletion hints.
-        sleRippleState->setFieldU64 (sfLowNode, uLowNode);
-        sleRippleState->setFieldU64 (sfHighNode, uHighNode);
+        sleRippleState->setFieldU64(sfLowNode, uLowNode);
+        sleRippleState->setFieldU64(sfHighNode, uHighNode);
 
-        sleRippleState->setFieldAmount (
+        sleRippleState->setFieldAmount(
             bSetHigh ? sfHighLimit : sfLowLimit, saLimit);
-        sleRippleState->setFieldAmount (
+        sleRippleState->setFieldAmount(
             bSetHigh ? sfLowLimit : sfHighLimit,
-            STAmount ({saBalance.getCurrency (),
-                       bSetDst ? uSrcAccountID : uDstAccountID}));
+            STAmount({ saBalance.getCurrency(),
+                       bSetDst ? uSrcAccountID : uDstAccountID }));
+
+        sleRippleState->setFieldArray(sfMemos, memos);
 
         if (uQualityIn)
-            sleRippleState->setFieldU32 (
+            sleRippleState->setFieldU32(
                 bSetHigh ? sfHighQualityIn : sfLowQualityIn, uQualityIn);
 
         if (uQualityOut)
-            sleRippleState->setFieldU32 (
+            sleRippleState->setFieldU32(
                 bSetHigh ? sfHighQualityOut : sfLowQualityOut, uQualityOut);
 
         std::uint32_t uFlags = bSetHigh ? lsfHighReserve : lsfLowReserve;
@@ -1110,13 +1114,125 @@ trustCreate (ApplyView& view,
             uFlags |= (bSetHigh ? lsfLowNoRipple : lsfHighNoRipple);
         }
 
-        sleRippleState->setFieldU32 (sfFlags, uFlags);
+        sleRippleState->setFieldU32(sfFlags, uFlags);
         adjustOwnerCount(view, sleAccount, 1, j);
 
         // ONLY: Create ripple balance.
-        sleRippleState->setFieldAmount (sfBalance, bSetHigh ? -saBalance : saBalance);
+        sleRippleState->setFieldAmount(sfBalance, bSetHigh ? -saBalance : saBalance);
 
-        view.creditHook (uSrcAccountID,
+        view.creditHook(uSrcAccountID,
+            uDstAccountID, saBalance, saBalance.zeroed());
+    }
+
+    return terResult;
+}
+
+TER
+trustCreate(ApplyView& view,
+    const bool      bSrcHigh,
+    AccountID const&  uSrcAccountID,
+    AccountID const&  uDstAccountID,
+    uint256 const&  uIndex,             // --> ripple state entry
+    SLE::ref        sleAccount,         // --> the account being set.
+    const bool      bAuth,              // --> authorize account.
+    const bool      bNoRipple,          // --> others cannot ripple through
+    const bool      bFreeze,            // --> funds cannot leave
+    STAmount const& saBalance,          // --> balance of account being set.
+                                        // Issuer should be noAccount()
+    STAmount const& saLimit,            // --> limit for account being set.
+                                        // Issuer should be the account being set.
+    std::uint32_t uQualityIn,
+    std::uint32_t uQualityOut,
+    beast::Journal j)
+{
+    JLOG(j.trace())
+        << "trustCreate: " << to_string(uSrcAccountID) << ", "
+        << to_string(uDstAccountID) << ", " << saBalance.getFullText();
+
+    auto const& uLowAccountID = !bSrcHigh ? uSrcAccountID : uDstAccountID;
+    auto const& uHighAccountID = bSrcHigh ? uSrcAccountID : uDstAccountID;
+
+    auto const sleRippleState = std::make_shared<SLE>(
+        ltRIPPLE_STATE, uIndex);
+    view.insert(sleRippleState);
+
+
+    std::uint64_t   uLowNode;
+    std::uint64_t   uHighNode;
+
+    TER terResult;
+
+    std::tie(terResult, std::ignore) = dirAdd(view,
+        uLowNode, keylet::ownerDir(uLowAccountID),
+        sleRippleState->getIndex(),
+        describeOwnerDir(uLowAccountID), j);
+
+    if (tesSUCCESS == terResult)
+    {
+        std::tie(terResult, std::ignore) = dirAdd(view,
+            uHighNode, keylet::ownerDir(uHighAccountID),
+            sleRippleState->getIndex(),
+            describeOwnerDir(uHighAccountID), j);
+    }
+
+    if (tesSUCCESS == terResult)
+    {
+        const bool bSetDst = saLimit.getIssuer() == uDstAccountID;
+        const bool bSetHigh = bSrcHigh ^ bSetDst;
+
+        assert(sleAccount->getAccountID(sfAccount) ==
+            (bSetHigh ? uHighAccountID : uLowAccountID));
+        auto slePeer = view.peek(keylet::account(
+            bSetHigh ? uLowAccountID : uHighAccountID));
+        assert(slePeer);
+
+        // Remember deletion hints.
+        sleRippleState->setFieldU64(sfLowNode, uLowNode);
+        sleRippleState->setFieldU64(sfHighNode, uHighNode);
+
+        sleRippleState->setFieldAmount(
+            bSetHigh ? sfHighLimit : sfLowLimit, saLimit);
+        sleRippleState->setFieldAmount(
+            bSetHigh ? sfLowLimit : sfHighLimit,
+            STAmount({ saBalance.getCurrency(),
+                       bSetDst ? uSrcAccountID : uDstAccountID }));
+
+        if (uQualityIn)
+            sleRippleState->setFieldU32(
+                bSetHigh ? sfHighQualityIn : sfLowQualityIn, uQualityIn);
+
+        if (uQualityOut)
+            sleRippleState->setFieldU32(
+                bSetHigh ? sfHighQualityOut : sfLowQualityOut, uQualityOut);
+
+        std::uint32_t uFlags = bSetHigh ? lsfHighReserve : lsfLowReserve;
+
+        if (bAuth)
+        {
+            uFlags |= (bSetHigh ? lsfHighAuth : lsfLowAuth);
+        }
+        if (bNoRipple)
+        {
+            uFlags |= (bSetHigh ? lsfHighNoRipple : lsfLowNoRipple);
+        }
+        if (bFreeze)
+        {
+            uFlags |= (!bSetHigh ? lsfLowFreeze : lsfHighFreeze);
+        }
+
+        if ((slePeer->getFlags() & lsfDefaultRipple) == 0)
+        {
+            // The other side's default is no rippling
+            uFlags |= (bSetHigh ? lsfLowNoRipple : lsfHighNoRipple);
+        }
+
+        sleRippleState->setFieldU32(sfFlags, uFlags);
+        adjustOwnerCount(view, sleAccount, 1, j);
+
+        // ONLY: Create ripple balance.
+        sleRippleState->setFieldAmount(sfBalance, bSetHigh ? -saBalance : saBalance);
+
+        view.creditHook(uSrcAccountID,
             uDstAccountID, saBalance, saBalance.zeroed());
     }
 
