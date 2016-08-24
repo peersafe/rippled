@@ -440,7 +440,7 @@ JSS ( vetoed );                     // out: AmendmentTableImpl
 JSS ( vote );                       // in: Feature
 JSS ( warning );                    // rpc:
 JSS ( write_load );                 // out: GetCounts
-
+JSS (memos);                        // out: memos
 #undef JSS
 
 } // jss

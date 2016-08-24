@@ -112,6 +112,11 @@ public:
         return mBalance;
     }
 
+    STArray const& getMemos() const
+    {
+        return mMemos;
+    }
+
     STAmount const& getLimit () const
     {
         return  mViewLowest ? mLowLimit : mHighLimit;
@@ -155,6 +160,7 @@ private:
     Rate highQualityOut_;
 
     STAmount                        mBalance;
+    STArray const&                  mMemos;
 };
 
 std::vector <RippleState::pointer>
