@@ -20,6 +20,7 @@
 #ifndef RIPPLE_LEDGER_VIEW_H_INCLUDED
 #define RIPPLE_LEDGER_VIEW_H_INCLUDED
 
+#include <ripple/app/tx/impl/ApplyContext.h>
 #include <ripple/ledger/ApplyView.h>
 #include <ripple/ledger/OpenView.h>
 #include <ripple/ledger/RawView.h>
@@ -290,7 +291,7 @@ trustCreate(ApplyView& view,
     std::uint32_t uSrcQualityIn,
     std::uint32_t uSrcQualityOut,
     beast::Journal j,
-    STArray memos);
+    ApplyContext& ctx);
 
 TER
 trustDelete (ApplyView& view,

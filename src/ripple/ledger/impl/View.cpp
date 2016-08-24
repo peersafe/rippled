@@ -1029,7 +1029,7 @@ trustCreate (ApplyView& view,
     std::uint32_t uQualityIn,
     std::uint32_t uQualityOut,
     beast::Journal j,
-    STArray memos)
+    ApplyContext& ctx)
 {
     JLOG(j.trace())
         << "trustCreate: " << to_string(uSrcAccountID) << ", "
@@ -1083,7 +1083,12 @@ trustCreate (ApplyView& view,
             STAmount({ saBalance.getCurrency(),
                        bSetDst ? uSrcAccountID : uDstAccountID }));
 
-        sleRippleState->setFieldArray(sfMemos, memos);
+        STArray memos;
+        if (ctx.tx.isFieldPresent(sfMemos))
+        {
+            memos = ctx_.tx.getFieldArray(sfMemos);
+            sleRippleState->setFieldArray(sfMemos, memos);
+        }
 
         if (uQualityIn)
             sleRippleState->setFieldU32(
