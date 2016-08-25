@@ -59,9 +59,9 @@ void addLine (Json::Value& jsonLines, RippleState const& line)
     jPeer[jss::quality_in] = line.getQualityIn ().value;
     jPeer[jss::quality_out] = line.getQualityOut ().value;
    
-    auto memos = line.getMemos();
-    auto json = memos.getJson(0);
-    jPeer[jss::memos] = json;
+    if (line.getMemos().size()) {
+        jPeer[jss::memos] = line.getMemos().getJson(0);
+    }
 
     if (line.getAuth ())
         jPeer[jss::authorized] = true;
