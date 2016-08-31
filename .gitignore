@@ -87,3 +87,10 @@ rippled-build.log
 gmon.out
 
 Builds/VisualStudio2015/*.db
+
+# ignore the 2015 directory
+Builds/VisualStudio2015/.vs/
+Builds/VisualStudio2015/RippleD.vcxproj.user
+Builds/VisualStudio2015/debug.log
+Builds/VisualStudio2015/ripple.VC.VC.opendb
+Builds/VisualStudio2015/ripple.sdf
